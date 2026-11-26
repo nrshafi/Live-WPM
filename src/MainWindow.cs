@@ -340,9 +340,16 @@ namespace LiveWpm
             RectangleF r = new RectangleF(x, y, w, 104);
             Theme.Surface(g, Theme.Card, r, 12);
             Theme.DrawText(g, caption, Theme.F(10, true), Theme.Muted, x + 18, y + 14);
-            Font big = Theme.F(32, true);
-            Theme.DrawText(g, value, big, valueColor, x + 16, y + 30);
-            Theme.DrawText(g, unit, Theme.F(12.5f, false), Theme.Muted, x + 20 + Theme.Measure(g, value, big), y + 50);
+            Font uf = Theme.F(12.5f, false);
+            float unitW = Theme.Measure(g, unit, uf);
+            float maxW = w - 34;
+            float sz = 32;
+            Font big = Theme.F(sz, true);
+            if (Theme.Measure(g, value, big) + 4 + unitW > maxW) { sz = 26; big = Theme.F(sz, true); }
+            if (Theme.Measure(g, value, big) + 4 + unitW > maxW) { sz = 22; big = Theme.F(sz, true); }
+            float vy = y + 30 + (32 - sz) * 0.45f;
+            Theme.DrawText(g, value, big, valueColor, x + 16, vy);
+            Theme.DrawText(g, unit, uf, Theme.Muted, x + 20 + Theme.Measure(g, value, big), y + 50);
             Theme.DrawText(g, foot, Theme.F(10.5f, false), Theme.Muted, x + 18, y + 78);
         }
 
@@ -396,20 +403,29 @@ namespace LiveWpm
                 Hit(rowHit, "row:" + key);
                 if (hot)
                 {
-                    RectangleF del = new RectangleF(52 + lw + Theme.Measure(g, "0000", Theme.F(11, false)) + 12, y + 7, 28, 26);
-                    bool dh = Hov("del:" + key);
-                    if (dh) Theme.FillRound(g, Color.FromArgb(60, Theme.Danger), del, 7);
-                    DrawTrash(g, del.X + del.Width / 2, del.Y + del.Height / 2, dh ? Theme.DangerText : Theme.Muted);
-                    Hit(RectangleF.Intersect(del, clip), "del:" + key);
-
-                    RectangleF gr = new RectangleF(del.Right + 4, del.Y, 28, 26);
+                    RectangleF gr = new RectangleF(192, y + 7, 28, 26);
                     bool gh = Hov("graph:" + key);
                     if (gh) Theme.FillRound(g, Color.FromArgb(50, Theme.Accent), gr, 7);
                     DrawGraphIcon(g, gr.X + gr.Width / 2, gr.Y + gr.Height / 2, gh ? Theme.Accent : Theme.Muted);
                     Hit(RectangleF.Intersect(gr, clip), "graph:" + key);
+
+                    RectangleF del = new RectangleF(230, y + 7, 28, 26);
+                    bool dh = Hov("del:" + key);
+                    if (dh) Theme.FillRound(g, Color.FromArgb(60, Theme.Danger), del, 7);
+                    DrawTrash(g, del.X + del.Width / 2, del.Y + del.Height / 2, dh ? Theme.DangerText : Theme.Muted);
+                    Hit(RectangleF.Intersect(del, clip), "del:" + key);
                 }
             }
             g.Restore(st);
+            float viewH = ListBottom - ListTop;
+            float contentH = days.Count * RowH;
+            if (contentH > viewH)
+            {
+                float thumbH = Math.Max(24, viewH * viewH / contentH);
+                float maxScroll = contentH - viewH;
+                float thumbY = ListTop + (maxScroll > 0 ? (scroll / maxScroll) * (viewH - thumbH) : 0);
+                Theme.FillRound(g, Color.FromArgb(110, Theme.Muted), new RectangleF(W - 18, thumbY, 4, thumbH), 2);
+            }
         }
 
         // -- settings --
@@ -511,7 +527,26 @@ namespace LiveWpm
             Theme.DrawTextCenter(g, button, bf, danger ? Theme.DangerText : Theme.Text, b.X + bw / 2, b.Y + 6);
             Hit(b, id);
             if (!string.IsNullOrEmpty(value))
-                Theme.DrawTextRight(g, value, Theme.F(11.5f, false), Theme.Muted, b.X - 12, r.Y + 11);
+            {
+                Font vf = Theme.F(11.5f, false);
+                float titleEnd = r.X + 16 + Theme.Measure(g, title, Theme.F(12.5f, true)) + 16;
+                float maxValW = Math.Max(40, (b.X - 12) - titleEnd);
+                Theme.DrawTextRight(g, FitText(g, value, vf, maxValW), vf, Theme.Muted, b.X - 12, r.Y + 11);
+            }
+        }
+
+        static string FitText(Graphics g, string s, Font f, float maxW)
+        {
+            if (Theme.Measure(g, s, f) <= maxW) return s;
+            const string ell = "...";
+            int lo = 0, hi = s.Length;
+            while (lo < hi)
+            {
+                int mid = (lo + hi + 1) / 2;
+                if (Theme.Measure(g, s.Substring(0, mid) + ell, f) <= maxW) lo = mid;
+                else hi = mid - 1;
+            }
+            return lo > 0 ? s.Substring(0, lo).TrimEnd() + ell : ell;
         }
 
         // Name ... value  (switch) - the whole row toggles it.
