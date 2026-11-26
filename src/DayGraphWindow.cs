@@ -77,24 +77,12 @@ namespace LiveWpm
                 Theme.DrawText(g, stats[i], sf, i == 0 ? Theme.Accent : Theme.Muted, x, 57);
                 x += Theme.Measure(g, stats[i], sf);
             }
-            DrawClose(g);
+            Theme.DrawCloseX(g, CloseRect, hoverClose, Theme.Muted);
 
             Theme.Surface(g, Theme.Card, GraphRect, 12);
             SpeedGraph.Draw(g, GraphRect, day, hoverPoint,
                 day.Words > 0 ? "No graph for this day. Speed graphs are recorded from today onward." : "No runs this day.",
                 Theme.Card);
-        }
-
-        void DrawClose(Graphics g)
-        {
-            if (hoverClose) Theme.FillRound(g, Theme.Danger, CloseRect, 7);
-            float cx = CloseRect.X + CloseRect.Width / 2, cy = CloseRect.Y + CloseRect.Height / 2;
-            using (Pen p = new Pen(hoverClose ? Color.White : Theme.Muted, 1.6f))
-            {
-                p.StartCap = p.EndCap = LineCap.Round;
-                g.DrawLine(p, cx - 4.5f, cy - 4.5f, cx + 4.5f, cy + 4.5f);
-                g.DrawLine(p, cx + 4.5f, cy - 4.5f, cx - 4.5f, cy + 4.5f);
-            }
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
