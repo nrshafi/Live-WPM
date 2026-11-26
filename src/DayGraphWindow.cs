@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace LiveWpm
@@ -19,7 +20,7 @@ namespace LiveWpm
         DayGraphWindow(DayStat day)
         {
             this.day = day;
-            Text = day.Date.ToString("D");
+            Text = day.Date.ToString("D", CultureInfo.InvariantCulture);
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
@@ -53,10 +54,10 @@ namespace LiveWpm
             Theme.PaintBackground(g, W, H);
 
             DateTime today = DateTime.Today;
-            string title = day.Date == today ? "Today" : day.Date == today.AddDays(-1) ? "Yesterday" : day.Date.ToString("dddd, MMM d");
+            string title = day.Date == today ? "Today" : day.Date == today.AddDays(-1) ? "Yesterday" : day.Date.ToString("dddd, MMM d", CultureInfo.InvariantCulture);
             Font tf = Theme.F(18, true);
             Theme.DrawText(g, title, tf, Theme.Text, 26, 22);
-            Theme.DrawText(g, day.Date.ToString("yyyy"), Theme.F(12, false), Theme.Muted, 32 + Theme.Measure(g, title, tf), 28);
+            Theme.DrawText(g, day.Date.ToString("yyyy", CultureInfo.InvariantCulture), Theme.F(12, false), Theme.Muted, 32 + Theme.Measure(g, title, tf), 28);
 
             // the day's totals, as a quiet stat line
             System.Collections.Generic.List<string> list = new System.Collections.Generic.List<string> {

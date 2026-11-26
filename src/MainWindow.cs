@@ -185,10 +185,16 @@ namespace LiveWpm
                 // Discord has no profile links by username, so copy it for pasting into "Add Friend".
                 try { Clipboard.SetText("tasin_py"); } catch { }
                 discordCopied = true;
-                Timer t = new Timer();
-                t.Interval = 1600;
-                t.Tick += delegate { t.Dispose(); discordCopied = false; Invalidate(); };
-                t.Start();
+                if (discordTimer != null) { discordTimer.Stop(); discordTimer.Dispose(); }
+                discordTimer = new Timer();
+                discordTimer.Interval = 1600;
+                discordTimer.Tick += delegate
+                {
+                    if (discordTimer != null) { discordTimer.Stop(); discordTimer.Dispose(); discordTimer = null; }
+                    discordCopied = false;
+                    if (!IsDisposed) Invalidate();
+                };
+                discordTimer.Start();
             }
             else if (id == "set:startup")
             {
@@ -312,7 +318,7 @@ namespace LiveWpm
             Theme.DrawText(g, "LIFETIME", Theme.F(10.5f, true), Theme.Muted, 30, 434);
 
             bool hasPeak = store.PeakWpm > 0;
-            string when = hasPeak ? store.PeakTime.ToString("MMM d, yyyy · h:mm tt") : "type a bit to set it";
+            string when = hasPeak ? store.PeakTime.ToString("MMM d, yyyy · h:mm tt", CultureInfo.InvariantCulture) : "type a bit to set it";
             Card(g, 28, 316, cw, "PEAK SPEED", hasPeak ? Theme.Fmt(store.PeakWpm) : "—", "wpm", when, Theme.Accent);
             Card(g, 28 + cw + 16, 316, cw, "ACCURACY", hasPeak ? Theme.Fmt(store.PeakAcc) : "—", "%", "on your peak run", Theme.Text);
             Card(g, 28 + 2 * (cw + 16), 316, cw, "WORDS AT ONCE", hasPeak ? Theme.Num(store.PeakWords) : "—", "words", "typed in that run", Theme.Text);
@@ -375,11 +381,11 @@ namespace LiveWpm
                 bool hot = Hov("row:" + key) || Hov("del:" + key) || Hov("graph:" + key);
                 Theme.Surface(g, hot ? Theme.CardHover : Theme.Card, row, 9);
 
-                string label = d.Date == today ? "Today" : d.Date == today.AddDays(-1) ? "Yesterday" : d.Date.ToString("ddd, MMM d");
+                string label = d.Date == today ? "Today" : d.Date == today.AddDays(-1) ? "Yesterday" : d.Date.ToString("ddd, MMM d", CultureInfo.InvariantCulture);
                 Font df = Theme.F(13, true);
                 Theme.DrawText(g, label, df, Theme.Text, 46, y + 11);
                 float lw = Theme.Measure(g, label, df);
-                Theme.DrawText(g, d.Date.ToString("yyyy"), Theme.F(11, false), Theme.Muted, 52 + lw, y + 13);
+                Theme.DrawText(g, d.Date.ToString("yyyy", CultureInfo.InvariantCulture), Theme.F(11, false), Theme.Muted, 52 + lw, y + 13);
 
                 Font vf = Theme.F(13, true);
                 Theme.DrawTextRight(g, d.PeakWpm > 0 ? Theme.Fmt(d.PeakWpm) + " wpm" : "—", vf, Theme.Accent, cPeak, y + 11);
@@ -461,10 +467,11 @@ namespace LiveWpm
         }
 
         bool discordCopied;
+        Timer discordTimer;
 
         static string LastLabel(SessionUndo u)
         {
-            string when = u.Started.Date == DateTime.Today ? u.Started.ToString("h:mm tt") : u.Started.ToString("MMM d, h:mm tt");
+            string when = u.Started.Date == DateTime.Today ? u.Started.ToString("h:mm tt", CultureInfo.InvariantCulture) : u.Started.ToString("MMM d, h:mm tt", CultureInfo.InvariantCulture);
             return Theme.Num(u.Words) + (u.Words == 1 ? " word" : " words") + " at " + when;
         }
 
@@ -626,7 +633,7 @@ namespace LiveWpm
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { logo.Dispose(); glass.Dispose(); }
+            if (disposing) { if (discordTimer != null) { discordTimer.Dispose(); discordTimer = null; } logo.Dispose(); glass.Dispose(); }
             base.Dispose(disposing);
         }
     }
